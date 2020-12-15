@@ -40,23 +40,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var hw_transport_node_hid_1 = __importDefault(require("@ledgerhq/hw-transport-node-hid"));
-// import Transport from "@ledgerhq/hw-transport-u2f"; // for browser
 var hw_app_btc_1 = __importDefault(require("@ledgerhq/hw-app-btc"));
-var getBtcAddress = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var transport, devices, btc, result;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, hw_transport_node_hid_1.default.create()];
-            case 1:
-                transport = _a.sent();
-                devices = hw_transport_node_hid_1.default.list();
-                console.log("devices= ", devices);
-                btc = new hw_app_btc_1.default(transport);
-                return [4 /*yield*/, btc.getWalletPublicKey("44'/0'/0'/0/0")];
-            case 2:
-                result = _a.sent();
-                return [2 /*return*/, result.bitcoinAddress];
-        }
+function example() {
+    return __awaiter(this, void 0, void 0, function () {
+        var transport, appBtc, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, hw_transport_node_hid_1.default.open("")];
+                case 1:
+                    transport = _a.sent();
+                    transport.setDebugMode(true);
+                    appBtc = new hw_app_btc_1.default(transport);
+                    return [4 /*yield*/, appBtc.getWalletPublicKey("44'/0'/0'/0/0")];
+                case 2:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
     });
-}); };
-getBtcAddress().then(function (a) { return console.log(a); });
+}
+example().then(function (result) {
+    console.log(result);
+}, function (e) {
+    console.error(e);
+});
