@@ -27,6 +27,7 @@ import {
   StakingTransactionData,
   StakingTransactionList,
 } from '../models/Transaction';
+import { LocalWalletSignerProvider } from './signers/SignerProvider';
 
 export interface TransferRequest {
   toAddress: string;
@@ -149,13 +150,16 @@ class WalletService {
 
   public async prepareTransaction() {
     const currentSession = await this.storageService.retrieveCurrentSession();
+    const currentWallet = currentSession.wallet;
 
     const nodeRpc = await NodeRpcService.init(currentSession.wallet.config.nodeUrl);
 
     const accountNumber = await nodeRpc.fetchAccountNumber(currentSession.wallet.address);
     const accountSequence = await nodeRpc.loadSequenceNumber(currentSession.wallet.address);
 
-    const transactionSigner = new TransactionSigner(currentSession.wallet.config);
+    const phrase = currentSession.wallet.encryptedPhrase;
+    const wallet = new LocalWalletSignerProvider(phrase, currentWallet.config.derivationPath);
+    const transactionSigner = new TransactionSigner(currentWallet.config, wallet);
 
     return {
       nodeRpc,
