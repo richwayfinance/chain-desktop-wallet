@@ -7,7 +7,7 @@ import { HDKey } from '../types/ChainJsLib';
 
 const TransportWebUSB: any = require('@ledgerhq/hw-transport-webusb').default;
 const TransportU2F: any = require('@ledgerhq/hw-transport-u2f').default;
-const TransportHID: any = require('@ledgerhq/hw-transport-node-hid').default;
+/// const TransportHID: any = require('@ledgerhq/hw-transport-node-hid').default;
 const CosmosApp: any = require('ledger-cosmos-js').default;
 
 export interface ISignerProvider {
@@ -80,9 +80,9 @@ export class LedgerWalletSignerProvider implements ISignerProvider {
       case 'U2F':
         transport = await TransportU2F.create();
         break;
-      case 'HID':
-        transport = await TransportHID.create();
-        break;
+      ///     case 'HID':
+      ///      transport = await TransportHID.create();
+      ///     break;
       default:
         throw new Error('Unsupported transport');
     }
@@ -92,13 +92,6 @@ export class LedgerWalletSignerProvider implements ISignerProvider {
     if (response.error_message !== 'No errors') {
       throw new Error(`[${response.error_message}] ${response.error_message}`);
     }
-
-    console.log('Response received!');
-    console.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
-    console.log(`Device Locked: ${response.device_locked}`);
-    console.log(`Test mode: ${response.test_mode}`);
-    console.log('Full response:');
-    console.log(response);
 
     this.path = this.config.bip44.path(this.account, this.index);
 
