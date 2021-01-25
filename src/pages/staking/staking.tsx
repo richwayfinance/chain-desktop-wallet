@@ -83,12 +83,14 @@ const FormDelegationRequest = () => {
     }
     try {
       setConfirmLoading(true);
+      const { walletType } = currentSession.wallet;
       const stakingResult = await walletService.sendDelegateTransaction({
         validatorAddress: formValues.validatorAddress,
         amount: formValues.amount,
         asset: walletAsset,
         memo,
         decryptedPhrase,
+        walletType,
       });
       setBroadcastResult(stakingResult);
 
@@ -370,9 +372,11 @@ const FormWithdrawStakingReward = () => {
     }
     try {
       setConfirmLoading(true);
+      const { walletType } = currentSession.wallet;
       const rewardWithdrawResult = await walletService.sendStakingRewardWithdrawalTx({
         validatorAddress: withdrawValues.validatorAddress,
         decryptedPhrase,
+        walletType,
       });
       setBroadcastResult(rewardWithdrawResult);
 

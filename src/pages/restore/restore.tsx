@@ -287,6 +287,7 @@ const FormRestore: React.FC<FormRestoreProps> = props => {
       walletName: name,
       phrase: mnemonic.toString().trim(),
       config: selectedNetworkConfig,
+      walletType: 'normal',
     };
     try {
       const wallet = await walletService.restoreWallet(importOptions);

@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
-import { Button, Form, Input, Select } from 'antd';
+import { Button, Form, Input, Select, Checkbox } from 'antd';
 import { FormInstance } from 'antd/lib/form';
 import { walletIdentifierState } from '../../recoil/atom';
 import './create.less';
 import { Wallet } from '../../models/Wallet';
 import { walletService } from '../../service/WalletService';
 import { WalletCreateOptions } from '../../service/WalletCreator';
-import { DefaultWalletConfigs } from '../../config/StaticConfig';
+import { DefaultWalletConfigs, CosmosPorts } from '../../config/StaticConfig';
 import logo from '../../assets/logo-products-chain.svg';
 import SuccessModalPopup from '../../components/SuccessModalPopup/SuccessModalPopup';
 import ErrorModalPopup from '../../components/ErrorModalPopup/ErrorModalPopup';
 import { Session } from '../../models/Session';
+
 // import PasswordFormModal from '../../components/PasswordForm/PasswordFormModal';
 // import PasswordFormContainer from '../../components/PasswordForm/PasswordFormContainer';
 import BackButton from '../../components/BackButton/BackButton';
@@ -34,12 +35,14 @@ interface FormCustomConfigProps {
 interface FormCreateProps {
   form: FormInstance;
   isCreateDisable: boolean;
-  isSelectFieldDisable: boolean;
+  isNetworkSelectFieldDisable: boolean;
+  isWalletSelectFieldDisable: boolean;
   setWalletIdentifier: (walletIdentifier: string) => void;
   setIsCustomConfig: (arg: boolean) => void;
   setIsConnected: (arg: boolean) => void;
   setIsCreateDisable: (arg: boolean) => void;
-  setIsSelectFieldDisable: (arg: boolean) => void;
+  setIsNetworkSelectFieldDisable: (arg: boolean) => void;
+  setIsWalletSelectFieldDisable: (arg: boolean) => void;
   networkConfig: any;
 }
 
@@ -80,7 +83,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
     form.validateFields().then(async values => {
       setCheckingNodeConnection(true);
       const { nodeUrl } = values;
-      const isNodeLive = await walletService.checkNodeIsLive(nodeUrl);
+      const isNodeLive = await walletService.checkNodeIsLive(`${nodeUrl}${CosmosPorts.Main}`);
       setCheckingNodeConnection(false);
 
       if (isNodeLive) {
@@ -101,18 +104,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
         indexingUrl: DefaultWalletConfigs.TestNetConfig.indexingUrl,
       }}
     >
-      <Form.Item
-        name="nodeUrl"
-        label="Node URL"
-        hasFeedback
-        rules={[
-          { required: true, message: 'Node URL is required' },
-          {
-            pattern: /(https?:\/\/)?[\w\-~]+(\.[\w\-~]+)+(\/[\w\-~]*)*(#[\w-]*)?(\?.*)?/,
-            message: 'Please enter a valid node url',
-          },
-        ]}
-      >
+      <Form.Item name="nodeUrl" label="Node URL" hasFeedback initialValue="http://mynode">
         <Input placeholder="Node URL" />
       </Form.Item>
 
@@ -135,6 +127,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
         <Form.Item
           name="derivationPath"
           label="Derivation Path"
+          initialValue="m/44'/394'/0'/0/0"
           hasFeedback
           rules={[
             { required: true, message: 'Derivation Path is required' },
@@ -149,6 +142,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
         <Form.Item
           name="validatorPrefix"
           label="Validator Prefix"
+          initialValue="crocncl"
           hasFeedback
           rules={[{ required: true, message: 'Validator Prefix is required' }]}
         >
@@ -160,6 +154,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
         <Form.Item
           name="addressPrefix"
           label="Address Prefix"
+          initialValue="cro"
           hasFeedback
           rules={[{ required: true, message: 'Address Prefix is required' }]}
         >
@@ -169,6 +164,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
           name="chainId"
           label="Chain ID"
           hasFeedback
+          initialValue="test"
           rules={[{ required: true, message: 'Chain ID is required' }]}
         >
           <Input placeholder="Chain ID" />
@@ -178,6 +174,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
         <Form.Item
           name="baseDenom"
           label="Base Denom"
+          initialValue="basecro"
           hasFeedback
           rules={[{ required: true, message: 'Base Denom is required' }]}
         >
@@ -186,6 +183,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
         <Form.Item
           name="croDenom"
           label="CRO Denom"
+          initialValue="cro"
           hasFeedback
           rules={[{ required: true, message: 'CRO Denom is required' }]}
         >
@@ -200,7 +198,7 @@ const FormCustomConfig: React.FC<FormCustomConfigProps> = props => {
         title="Success!"
         button={
           <Button type="primary" onClick={checkNodeConnectivity} loading={checkingNodeConnection}>
-            Connect Node
+            Connect
           </Button>
         }
         footer={[
@@ -235,6 +233,8 @@ const FormCreate: React.FC<FormCreateProps> = props => {
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [wallet, setWallet] = useState<Wallet>();
+  const [hasWallet, setHasWallet] = useState(false); // Default as false. useEffect will only re-render if result of hasWalletBeenCreated === true
+  const didMountRef = useRef(false);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -263,11 +263,18 @@ const FormCreate: React.FC<FormCreateProps> = props => {
 
   const onChange = () => {
     const { name } = props.form.getFieldsValue();
-    if (name !== '') {
-      props.setIsSelectFieldDisable(false);
+    if (typeof name === 'undefined') {
+      props.setIsNetworkSelectFieldDisable(true);
+    } else if (name !== '') {
+      props.setIsNetworkSelectFieldDisable(false);
     } else {
-      props.setIsSelectFieldDisable(true);
+      props.setIsNetworkSelectFieldDisable(true);
     }
+  };
+
+  const onCheckboxChange = e => {
+    props.setIsWalletSelectFieldDisable(!e.target.checked);
+    props.form.setFieldsValue({ walletType: 'normal' });
   };
 
   const onNetworkChange = (network: string) => {
@@ -281,11 +288,12 @@ const FormCreate: React.FC<FormCreateProps> = props => {
 
   const onWalletCreateFinish = async () => {
     setCreateLoading(true);
-    const { name, network } = props.form.getFieldsValue();
+    const { name, walletType, network } = props.form.getFieldsValue();
 
-    if (!name || !network) {
+    if (!name || !walletType || !network) {
       return;
     }
+
     const selectedNetworkConfig = walletService.getSelectedNetwork(network, props);
     if (!selectedNetworkConfig) {
       return;
@@ -294,6 +302,7 @@ const FormCreate: React.FC<FormCreateProps> = props => {
     const createOptions: WalletCreateOptions = {
       walletName: name,
       config: selectedNetworkConfig,
+      walletType,
     };
 
     try {
@@ -305,6 +314,7 @@ const FormCreate: React.FC<FormCreateProps> = props => {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('issue on wallet create', e);
+
       setCreateLoading(false);
       showErrorModal();
       return;
@@ -312,6 +322,17 @@ const FormCreate: React.FC<FormCreateProps> = props => {
 
     props.form.resetFields();
   };
+
+  useEffect(() => {
+    const fetchWalletData = async () => {
+      const hasWalletBeenCreated = await walletService.hasWalletBeenCreated();
+      setHasWallet(hasWalletBeenCreated);
+    };
+    if (!didMountRef.current) {
+      fetchWalletData();
+      didMountRef.current = true;
+    }
+  }, [hasWallet]);
 
   return (
     <Form
@@ -330,11 +351,36 @@ const FormCreate: React.FC<FormCreateProps> = props => {
       >
         <Input maxLength={36} placeholder="Wallet name" />
       </Form.Item>
+      {hasWallet ? (
+        <Checkbox onChange={onCheckboxChange}>Want to create with hardware wallet?</Checkbox>
+      ) : (
+        ''
+      )}
+      <Form.Item
+        name="walletType"
+        label="Wallet Type"
+        initialValue="normal"
+        hidden={props.isWalletSelectFieldDisable}
+      >
+        <Select
+          placeholder="Select wallet type"
+          // onChange={onChange}
+          disabled={props.isWalletSelectFieldDisable}
+          defaultValue="normal"
+        >
+          <Select.Option key="normal" value="normal">
+            Normal
+          </Select.Option>
+          <Select.Option key="ledger" value="ledger">
+            Ledger
+          </Select.Option>
+        </Select>
+      </Form.Item>
       <Form.Item name="network" label="Network" rules={[{ required: true }]}>
         <Select
           placeholder="Select wallet network"
           onChange={onNetworkChange}
-          disabled={props.isSelectFieldDisable}
+          disabled={props.isNetworkSelectFieldDisable}
         >
           {walletService.supportedConfigs().map(config => (
             <Select.Option key={config.name} value={config.name} disabled={!config.enabled}>
@@ -392,7 +438,8 @@ const CreatePage = () => {
   const [isCreateDisable, setIsCreateDisable] = useState(false);
   const [isCustomConfig, setIsCustomConfig] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isSelectFieldDisable, setIsSelectFieldDisable] = useState(true);
+  const [isNetworkSelectFieldDisable, setIsNetworkSelectFieldDisable] = useState(true);
+  const [isWalletSelectFieldDisable, setIsWalletSelectFieldDisable] = useState(true);
   const [networkConfig, setNetworkConfig] = useState();
   const [walletIdentifier, setWalletIdentifier] = useRecoilState(walletIdentifierState);
   const didMountRef = useRef(false);
@@ -431,8 +478,10 @@ const CreatePage = () => {
             <FormCreate
               form={form}
               isCreateDisable={isCreateDisable}
-              isSelectFieldDisable={isSelectFieldDisable}
-              setIsSelectFieldDisable={setIsSelectFieldDisable}
+              isNetworkSelectFieldDisable={isNetworkSelectFieldDisable}
+              isWalletSelectFieldDisable={isWalletSelectFieldDisable}
+              setIsNetworkSelectFieldDisable={setIsNetworkSelectFieldDisable}
+              setIsWalletSelectFieldDisable={setIsWalletSelectFieldDisable}
               setWalletIdentifier={setWalletIdentifier}
               setIsCustomConfig={setIsCustomConfig}
               setIsConnected={setIsConnected}

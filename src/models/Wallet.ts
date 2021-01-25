@@ -5,7 +5,7 @@ export class Wallet {
 
   public readonly name: string;
 
-  public readonly address: string;
+  public address: string;
 
   public encryptedPhrase: string;
 
@@ -17,18 +17,22 @@ export class Wallet {
   // This will be set to true once the wallet phrase has been encrypted
   public hasBeenEncrypted: boolean = false;
 
+  public readonly walletType: string;
+
   constructor(
     id: string,
     name: string,
     address: string,
     config: WalletConfig,
     encryptedPhrase: string,
+    walletType: string,
   ) {
     this.identifier = id;
     this.name = name;
     this.address = address;
     this.config = config;
     this.encryptedPhrase = encryptedPhrase;
+    this.walletType = walletType;
   }
 }
 

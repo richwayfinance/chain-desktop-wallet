@@ -4,7 +4,7 @@ import { Session } from '../models/Session';
 import { Wallet } from '../models/Wallet';
 import { UserAsset } from '../models/UserAsset';
 
-const wallet = new Wallet('', '', '', DefaultWalletConfigs.TestNetConfig, '');
+const wallet = new Wallet('', '', '', DefaultWalletConfigs.TestNetConfig, '', 'normal');
 const session = new Session(wallet, 'USD');
 const asset: UserAsset = {
   identifier: '',

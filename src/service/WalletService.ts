@@ -12,6 +12,7 @@ import {
 import { WalletImporter, WalletImportOptions } from './WalletImporter';
 import { NodeRpcService } from './rpc/NodeRpcService';
 import { TransactionSigner } from './signers/TransactionSigner';
+import { LedgerTransactionSigner } from './signers/LedgerTransactionSigner';
 import { Session } from '../models/Session';
 import {
   DelegateTransactionUnsigned,
@@ -33,6 +34,8 @@ import {
 } from '../models/Transaction';
 import { ChainIndexingAPI } from './rpc/ChainIndexingAPI';
 import { getBaseScaledAmount } from '../utils/NumberUtils';
+import { createLedgerDevice } from './LedgerService';
+import { ISignerProvider } from './signers/SignerProvider';
 
 export interface TransferRequest {
   toAddress: string;
@@ -40,6 +43,7 @@ export interface TransferRequest {
   memo: string;
   decryptedPhrase: string;
   asset: UserAsset;
+  walletType: string; // normal, ledger
 }
 
 export interface DelegationRequest {
@@ -48,11 +52,13 @@ export interface DelegationRequest {
   memo: string;
   asset: UserAsset;
   decryptedPhrase: string;
+  walletType: string; // normal, ledger
 }
 
 export interface WithdrawStakingRewardRequest {
   validatorAddress: string;
   decryptedPhrase: string;
+  walletType: string; // normal, ledger
 }
 
 class WalletService {
@@ -71,26 +77,39 @@ class WalletService {
       accountSequence,
       currentSession,
       transactionSigner,
+      ledgerTransactionSigner,
     } = await this.prepareTransaction();
 
     const scaledBaseAmount = getBaseScaledAmount(transferRequest.amount, transferRequest.asset);
-
+    const fromAddress = currentSession.wallet.address;
     const transfer: TransferTransactionUnsigned = {
-      fromAddress: currentSession.wallet.address,
+      fromAddress,
       toAddress: transferRequest.toAddress,
-      amount: scaledBaseAmount,
+      amount: String(scaledBaseAmount),
       memo: transferRequest.memo,
       accountNumber,
       accountSequence,
     };
 
-    const signedTxHex = await transactionSigner.signTransfer(
-      transfer,
-      transferRequest.decryptedPhrase,
-    );
+    let signedTxHex: string = '';
+
+    if (transferRequest.walletType === 'ledger') {
+      signedTxHex = await ledgerTransactionSigner.signTransfer(
+        transfer,
+        transferRequest.decryptedPhrase,
+      );
+    } else {
+      signedTxHex = await transactionSigner.signTransfer(transfer, transferRequest.decryptedPhrase);
+    }
+
     const broadCastResult = await nodeRpc.broadcastTransaction(signedTxHex);
     await this.syncAll(currentSession);
     return broadCastResult;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  private getScaledAmount(amount: string, asset: UserAsset): number {
+    return Number(amount) * 10 ** asset.decimals;
   }
 
   public async sendDelegateTransaction(
@@ -102,6 +121,7 @@ class WalletService {
       accountSequence,
       currentSession,
       transactionSigner,
+      ledgerTransactionSigner,
     } = await this.prepareTransaction();
 
     const delegationAmountScaled = getBaseScaledAmount(
@@ -111,16 +131,25 @@ class WalletService {
     const delegateTransaction: DelegateTransactionUnsigned = {
       delegatorAddress: currentSession.wallet.address,
       validatorAddress: delegationRequest.validatorAddress,
-      amount: delegationAmountScaled,
+      amount: String(delegationAmountScaled),
       memo: delegationRequest.memo,
       accountNumber,
       accountSequence,
     };
+    
+    let signedTxHex: string;
+    if (delegationRequest.walletType === 'ledger') {
+      signedTxHex = await ledgerTransactionSigner.signDelegateTx(
+        delegateTransaction,
+        delegationRequest.decryptedPhrase,
+      );
+    } else {
+      signedTxHex = await transactionSigner.signDelegateTx(
+        delegateTransaction,
+        delegationRequest.decryptedPhrase,
+      );
+    }
 
-    const signedTxHex = await transactionSigner.signDelegateTx(
-      delegateTransaction,
-      delegationRequest.decryptedPhrase,
-    );
     const broadCastResult = await nodeRpc.broadcastTransaction(signedTxHex);
     await this.syncAll(currentSession);
     return broadCastResult;
@@ -142,6 +171,7 @@ class WalletService {
       accountSequence,
       currentSession,
       transactionSigner,
+      ledgerTransactionSigner,
     } = await this.prepareTransaction();
 
     const withdrawStakingReward: WithdrawStakingRewardUnsigned = {
@@ -152,10 +182,20 @@ class WalletService {
       accountSequence,
     };
 
-    const signedTxHex = await transactionSigner.signWithdrawStakingRewardTx(
-      withdrawStakingReward,
-      rewardWithdrawRequest.decryptedPhrase,
-    );
+    let signedTxHex: string;
+
+    if (rewardWithdrawRequest.walletType === 'ledger') {
+      signedTxHex = await ledgerTransactionSigner.signWithdrawStakingRewardTx(
+        withdrawStakingReward,
+        rewardWithdrawRequest.decryptedPhrase,
+      );
+    } else {
+      signedTxHex = await transactionSigner.signWithdrawStakingRewardTx(
+        withdrawStakingReward,
+        rewardWithdrawRequest.decryptedPhrase,
+      );
+    }
+
     const broadCastResult = await nodeRpc.broadcastTransaction(signedTxHex);
     await this.syncAll(currentSession);
     return broadCastResult;
@@ -163,13 +203,24 @@ class WalletService {
 
   public async prepareTransaction() {
     const currentSession = await this.storageService.retrieveCurrentSession();
+    const currentWallet = currentSession.wallet;
 
     const nodeRpc = await NodeRpcService.init(currentSession.wallet.config.nodeUrl);
 
     const accountNumber = await nodeRpc.fetchAccountNumber(currentSession.wallet.address);
     const accountSequence = await nodeRpc.loadSequenceNumber(currentSession.wallet.address);
 
-    const transactionSigner = new TransactionSigner(currentSession.wallet.config);
+    const transactionSigner = new TransactionSigner(currentWallet.config);
+
+    const signerProvider: ISignerProvider = createLedgerDevice();
+
+    const tmpWalletConfig = currentWallet.config;
+
+    const ledgerTransactionSigner = new LedgerTransactionSigner(
+      // currentWallet.config,
+      tmpWalletConfig,
+      signerProvider,
+    );
 
     return {
       nodeRpc,
@@ -177,6 +228,7 @@ class WalletService {
       accountSequence,
       currentSession,
       transactionSigner,
+      ledgerTransactionSigner,
     };
   }
 
@@ -192,6 +244,13 @@ class WalletService {
   // Create a new wallet and persist it on the db
   public async createAndSaveWallet(createOptions: WalletCreateOptions): Promise<Wallet> {
     const newWallet = WalletCreator.create(createOptions);
+    // ledger check
+
+    if (createOptions.walletType === 'ledger') {
+      const device: ISignerProvider = createLedgerDevice();
+      const address = await device.getAddress(0);
+      newWallet.address = address;
+    }
     await this.persistWallet(newWallet);
     return newWallet;
   }
@@ -225,7 +284,14 @@ class WalletService {
     }
     return wallets.map(
       data =>
-        new Wallet(data.identifier, data.name, data.address, data.config, data.encryptedPhrase),
+        new Wallet(
+          data.identifier,
+          data.name,
+          data.address,
+          data.config,
+          data.encryptedPhrase,
+          data.walletType,
+        ),
     );
   }
 
@@ -260,6 +326,7 @@ class WalletService {
     if (!currentSession) {
       return;
     }
+
     const nodeRpc = await NodeRpcService.init(currentSession.wallet.config.nodeUrl);
 
     const assets: UserAsset[] = await this.retrieveCurrentWalletAssets(currentSession);

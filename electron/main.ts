@@ -2,13 +2,16 @@ import { app, BrowserWindow, nativeImage, Menu } from 'electron';
 import * as path from 'path';
 import * as isDev from 'electron-is-dev';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
-
+import { IpcMain } from './IpcMain';
 let win: BrowserWindow | null = null;
+let ipcmain: IpcMain | null = null;
 
 function createWindow() {
   const iconPath = path.join(__dirname, '/public/icon.png').replace(/\\/g, '\\\\');
   const iconImage = nativeImage.createFromPath(iconPath);
   iconImage.setTemplateImage(true);
+  ipcmain = new IpcMain();
+  ipcmain.setup();
 
   win = new BrowserWindow({
     autoHideMenuBar: true,
