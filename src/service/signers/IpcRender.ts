@@ -35,3 +35,34 @@ export class IpcRender implements ISignerProvider {
     return Bytes.fromBuffer(Buffer.from(arg.signed));
   }
 }
+
+export class IpcRenderZemu implements ISignerProvider {
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  class-methods-use-this
+  async getPubKey(index: number): Promise<Bytes> {
+    const arg = electron.ipcRenderer.sendSync('enableWalletZemu', {
+      index,
+      message: 'enableWallet request for getPubKey',
+    });
+    const ret = Bytes.fromBuffer(Buffer.from(arg.pubKey));
+    return ret;
+  }
+
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  class-methods-use-this
+  async getAddress(index: number): Promise<string> {
+    const arg = electron.ipcRenderer.sendSync('enableWalletZemu', {
+      index,
+      message: 'enableWallet request for getAddress',
+    });
+    return arg.account;
+  }
+
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  class-methods-use-this
+  async sign(message: Bytes): Promise<Bytes> {
+    const stringMessage = message.toBuffer().toString();
+    const arg = electron.ipcRenderer.sendSync('signMessageZemu', stringMessage);
+    return Bytes.fromBuffer(Buffer.from(arg.signed));
+  }
+}
