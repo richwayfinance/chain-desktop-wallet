@@ -6,7 +6,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --detectOpenHandles"
+    "start":"node ./build/tests/src/test.js",
+    "test": "jest --detectOpenHandles",
+    "build": "tsc -p tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -20,6 +22,8 @@
     "@zondax/zemu": "^0.2.4"
   },
   "devDependencies": {
+    "@types/jest": "~26.0.19",
+    "@types/node": "~14.14.20",
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.9.0",
     "@babel/node": "^7.8.7",
