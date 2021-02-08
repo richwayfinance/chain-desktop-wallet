@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "sourceMap": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "../build",
+    "rootDir": "../",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "esModuleInterop": true ,
+    "typeRoots": ["node_modules/@types"],
+    "types":["long"]
+  }
+}
