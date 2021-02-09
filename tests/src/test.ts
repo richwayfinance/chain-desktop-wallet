@@ -1,5 +1,5 @@
 // import CosmosApp from 'ledger-cosmos-js';
-import {Zemu} from '@zondax/zemu';
+const Zemu = require('@zondax/menu');
 import { LedgerSigner, LedgerConfig } from '../../src/service/signers/LedgerSigner';
 import {BIP44} from "@chainapsis/cosmosjs/core/bip44";
 
@@ -20,7 +20,7 @@ export class LedgerSignerZemu extends LedgerSigner {
     if (this.app === null || this.app === undefined) {
       const sim = new Zemu(APP_PATH);
       await sim.start();
-      Zemu.checkAndPullImage();
+      Zemu.default.checkAndPullImage();
       this.app = new CosmosApp(sim.getTransport());
       this.sim = sim;
     }
