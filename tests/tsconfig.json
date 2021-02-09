@@ -6,12 +6,13 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "outDir": "../build",
+    "outDir": "build2",
     "rootDir": "../",
     "moduleResolution": "node",
     "noEmitOnError": true,
     "esModuleInterop": true ,
     "typeRoots": ["node_modules/@types"],
     "types":["long"]
-  }
+  },
+  "include": ["src/**/*"]
 }

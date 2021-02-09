@@ -1,12 +1,13 @@
 // import CosmosApp from 'ledger-cosmos-js';
 import { Zemu } from '@zondax/zemu';
-import { LedgerSigner, LedgerConfig } from '../src/service/signers/LedgerSigner';
+import { LedgerSigner, LedgerConfig } from '../../src/service/signers/LedgerSigner';
+import {BIP44} from "@chainapsis/cosmosjs/core/bip44";
 
 const CosmosApp: any = require('ledger-cosmos-js').default;
 
 const Resolve = require('path').resolve;
 
-const APP_PATH = Resolve('../../app/bin/app.elf');
+const APP_PATH = Resolve('../app/bin/app.elf');
 
 export class LedgerSignerZemu extends LedgerSigner {
     public sim: any;
@@ -33,4 +34,19 @@ export class LedgerSignerZemu extends LedgerSigner {
     }
 }
 
+async function main() {
+    let config = new LedgerConfig(false, new BIP44(44, 394));
+    let zemu = new LedgerSignerZemu(config, 0);
 
+    const sim = new Zemu(APP_PATH);
+
+    try {
+        zemu.createTransport();
+    } finally {
+        zemu.closeTransport();
+    }
+}
+
+(async () => {
+    await main();
+})();
