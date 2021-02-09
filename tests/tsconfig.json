@@ -2,17 +2,25 @@
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "sourceMap": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "outDir": "build2",
-    "rootDir": "../",
     "moduleResolution": "node",
-    "noEmitOnError": true,
-    "esModuleInterop": true ,
-    "typeRoots": ["node_modules/@types"],
-    "types":["long"]
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "importHelpers": true,
+    "jsx": "react",
+    "alwaysStrict": true,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "strictNullChecks": false,
+    "skipLibCheck": true  ,
+    "outDir": "./build",
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*",
+  ]
 }
