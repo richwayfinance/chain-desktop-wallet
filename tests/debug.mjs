@@ -2,7 +2,7 @@ import Zemu from "@zondax/zemu";
 import CosmosApp from "ledger-cosmos-js";
 import path from "path";
 
-const APP_PATH = path.resolve(`./app/bin/app.elf`);
+const APP_PATH = path.resolve(`tests/app/bin/app.elf`);
 
 const seed = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const SIM_OPTIONS = {
@@ -92,7 +92,7 @@ async function main() {
         SIM_OPTIONS["custom"] = SIM_OPTIONS["custom"] + " --debug";
     }
 
-    const sim = new Zemu.default(APP_PATH, "192.168.31.94");
+    const sim = new Zemu.default(APP_PATH);
 
     try {
         await sim.start(SIM_OPTIONS);
