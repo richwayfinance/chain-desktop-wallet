@@ -1,5 +1,5 @@
-//import * as Zemu from '@zondax/zemu';
-import Zemu = require('@zondax/zemu');
+import * as Zemu from '@zondax/zemu';
+//import Zemu = require('@zondax/zemu');
 
 import CosmosApp from 'ledger-cosmos-js';
 import path from 'path';
