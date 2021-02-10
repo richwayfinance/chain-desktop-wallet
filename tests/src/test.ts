@@ -1,10 +1,8 @@
 import * as Zemu from '@zondax/zemu';
-//import Zemu = require('@zondax/zemu');
-
 import CosmosApp from 'ledger-cosmos-js';
-import path from 'path';
+import * as path from 'path';
 
-const APP_PATH = path.resolve(`tests/app/bin/app.elf`);
+const APP_PATH = path.resolve(`./app/bin/app.elf`);
 
 const seed = 'equip will roof matter pink blind book anxiety banner elbow sun young';
 const SIM_OPTIONS = {
@@ -51,11 +49,11 @@ const example_tx_str = {
 };
 
 async function beforeStart() {
-  await Zemu.checkAndPullImage();
+  await Zemu.default.checkAndPullImage();
 }
 
 async function beforeEnd() {
-  await Zemu.stopAllEmuContainers();
+  await Zemu.default.stopAllEmuContainers();
 }
 
 async function debugScenario(sim, app) {
@@ -90,15 +88,11 @@ async function debugScenario(sim, app) {
 async function main() {
   await beforeStart();
 
-  if (process.argv.length > 2 && process.argv[2] === 'debug') {
-    SIM_OPTIONS['custom'] = SIM_OPTIONS['custom'] + ' --debug';
-  }
-
   const sim = new Zemu.default(APP_PATH);
 
   try {
     await sim.start(SIM_OPTIONS);
-    const app = new CosmosApp.default(sim.getTransport());
+    const app = new CosmosApp(sim.getTransport());
 
     ////////////
     /// TIP you can use zemu commands here to take the app to the point where you trigger a breakpoint
@@ -113,5 +107,8 @@ async function main() {
 }
 
 (async () => {
-  await main();
+    await main();
+    console.log(SIM_OPTIONS);
+    console.log(example_tx_str);
+  console.log(APP_PATH);
 })();
