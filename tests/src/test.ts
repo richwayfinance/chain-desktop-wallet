@@ -1,52 +1,116 @@
-// import CosmosApp from 'ledger-cosmos-js';
-const Zemu = require('@zondax/menu');
-import { LedgerSigner, LedgerConfig } from '../../src/service/signers/LedgerSigner';
-import {BIP44} from "@chainapsis/cosmosjs/core/bip44";
+import Zemu from "@zondax/zemu";
+import CosmosApp from "ledger-cosmos-js";
+import path from "path";
 
-const CosmosApp: any = require('ledger-cosmos-js').default;
+const APP_PATH = path.resolve(`tests/app/bin/app.elf`);
 
-const Resolve = require('path').resolve;
+const seed = "equip will roof matter pink blind book anxiety banner elbow sun young"
+const SIM_OPTIONS = {
+    logging: true,
+    start_delay: 4000,
+    X11: true,
+    custom: `-s "${seed}" --display=headless --color LAGOON_BLUE`
+};
 
-const APP_PATH = Resolve('../app/bin/app.elf');
+const example_tx_str = {
+    "account_number": "108",
+    "chain_id": "cosmoshub-3",
+    "fee": {
+        "amount": [
+            {
+                "amount": "600",
+                "denom": "basecro"
+            }
+        ],
+        "gas": "200000"
+    },
+    "memo": "",
+    "msgs": [
+        {
+            "type": "cosmos-sdk/MsgWithdrawDelegationReward",
+            "value": {
+                "delegator_address": "cro19umvgcvk8cxsvzemy239nj9ngc2ltukantgyp3",
+                "validator_address": "crovaloper1648ynlpdw7fqa2axt0w2yp3fk542junl7rsvq6"
+            }
+        },
+        {
+            "type": "cosmos-sdk/MsgDelegate",
+            "value": {
+                "amount": {
+                    "amount": "20139397",
+                    "denom": "basecro"
+                },
+                "delegator_address": "cro19umvgcvk8cxsvzemy239nj9ngc2ltukantgyp3",
+                "validator_address": "crovaloper1648ynlpdw7fqa2axt0w2yp3fk542junl7rsvq6",
+            }
+        }
+    ],
+    "sequence": "106"
+};
 
-export class LedgerSignerZemu extends LedgerSigner {
-  public sim: any;
+async function beforeStart() {
+    await Zemu.default.checkAndPullImage();
+}
 
-  constructor(config: LedgerConfig, account: number = 0) {
-    super(config, account);
-  }
+async function beforeEnd() {
+    await Zemu.default.stopAllEmuContainers();
+}
 
-  async createTransport() {
-    if (this.app === null || this.app === undefined) {
-      const sim = new Zemu(APP_PATH);
-      await sim.start();
-      Zemu.default.checkAndPullImage();
-      this.app = new CosmosApp(sim.getTransport());
-      this.sim = sim;
-    }
-  }
+async function debugScenario(sim, app) {
+    const path = [44, 394, 0, 0, 0];
+    let tx = JSON.stringify(example_tx_str);
 
-  async closeTransport() {
-    if (this.sim != null) {
-      await this.sim.close();
-      this.sim = null;
-      this.app = null;
-      Zemu.stopAllEmuContainers();
-    }
-  }
+//    await Zemu.default.sleep(120000);
+
+    const addr = await app.getAddressAndPubKey(path, "cro");
+    console.log(addr)
+
+    console.log(tx);
+
+    // do not wait here..
+    const signatureRequest = app.sign(path, tx);
+    await Zemu.default.sleep(100000);
+
+    // await sim.clickRight();
+    // await sim.clickRight();
+    // await sim.clickRight();
+    // await sim.clickRight();
+    // await sim.clickRight();
+    // await sim.clickRight();
+    // await sim.clickRight();
+    // await sim.clickRight();
+    // await sim.clickBoth();
+
+    let resp = await signatureRequest;
+    console.log(resp);
 }
 
 async function main() {
-  let config = new LedgerConfig(false, new BIP44(44, 394));
-  let zemu = new LedgerSignerZemu(config, 0);
+    await beforeStart();
 
-  try {
-    zemu.createTransport();
-  } finally {
-    zemu.closeTransport();
-  }
+    if (process.argv.length > 2 && process.argv[2] === "debug") {
+        SIM_OPTIONS["custom"] = SIM_OPTIONS["custom"] + " --debug";
+    }
+
+    const sim = new Zemu.default(APP_PATH);
+
+    try {
+        await sim.start(SIM_OPTIONS);
+        const app = new CosmosApp.default(sim.getTransport());
+
+        ////////////
+        /// TIP you can use zemu commands here to take the app to the point where you trigger a breakpoint
+
+        await debugScenario(sim, app);
+
+        /// TIP
+
+    } finally {
+        await sim.close();
+        await beforeEnd();
+    }
 }
 
 (async () => {
-  await main();
+    await main();
 })();
