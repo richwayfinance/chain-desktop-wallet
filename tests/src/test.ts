@@ -69,17 +69,15 @@ async function debugScenario(sim, app) {
 
   // do not wait here..
   const signatureRequest = app.sign(path, tx);
-  await Zemu.default.sleep(100000);
+  await Zemu.default.sleep(10000);
 
-  await sim.clickRight();
-  // await sim.clickRight();
-  // await sim.clickRight();
-  // await sim.clickRight();
-  // await sim.clickRight();
-  // await sim.clickRight();
-  // await sim.clickRight();
-  // await sim.clickRight();
-  // await sim.clickBoth();
+  var i;
+  for (i=0; i<16; i++) {
+      await Zemu.default.sleep(100);
+      console.log("right click");
+      await sim.clickRight();
+  }
+  await sim.clickBoth();
 
   let resp = await signatureRequest;
   console.log(resp);
