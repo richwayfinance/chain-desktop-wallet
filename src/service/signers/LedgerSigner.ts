@@ -67,14 +67,8 @@ export class LedgerSigner {
       throw new Error(`[${response.error_message}] ${response.error_message}`);
     }
 
-    const key = {
-      address: LedgerSigner.fromBech32(response.bech32_address, addressPrefix),
-      pubKey: LedgerSigner.pubkeyToBytes(response.compressed_pk),
-    };
-
-    const address = LedgerSigner.toBech32(key.address, addressPrefix);
-    const pubkey = Bytes.fromUint8Array(key.pubKey);
-
+    const address = response.bech32_address;
+    const pubkey = Bytes.fromUint8Array(LedgerSigner.pubkeyToBytes(response.compressed_pk));
     const ret: [string, Bytes] = [address, pubkey];
     await this.closeTransport();
     return ret;

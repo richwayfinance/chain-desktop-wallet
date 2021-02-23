@@ -23,6 +23,7 @@ export class LedgerTransactionSigner implements ITransactionSigner {
   }
 
   public getTransactionInfo(phrase: string, transaction: TransactionUnsigned) {
+    console.log(phrase);
     this.setCustomFee(transaction);
     const cro = sdk.CroSDK({ network: this.config.network });
     const rawTx = new cro.RawTransaction();

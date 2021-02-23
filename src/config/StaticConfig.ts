@@ -18,7 +18,7 @@ export type WalletConfig = {
   network: Network;
 };
 
-const TestNetConfig: WalletConfig = {
+export const TestNetConfig: WalletConfig = {
   enabled: true,
   name: 'TESTNET',
   derivationPath: "m/44'/1'/0'/0/0",
@@ -32,7 +32,7 @@ const TestNetConfig: WalletConfig = {
 // For instance :
 export const NOT_KNOWN_YET_VALUE = 'TO_BE_DECIDED';
 
-const MainNetConfig: WalletConfig = {
+export const MainNetConfig: WalletConfig = {
   enabled: true,
   name: 'MAINNET',
   derivationPath: "m/44'/394'/0'/0/0",
@@ -43,7 +43,7 @@ const MainNetConfig: WalletConfig = {
 };
 
 // Supposed to be fully customizable by the user when it will be supported
-const CustomDevNet: WalletConfig = {
+export const CustomDevNet: WalletConfig = {
   derivationPath: "m/44'/394'/0'/0/0",
   enabled: true,
   name: 'CUSTOM DEVNET',
