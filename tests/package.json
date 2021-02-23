@@ -6,7 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ./build/test.js",
+    "start": "node ./build/tests/src/test.js",
     "test": "jest --detectOpenHandles",
     "build": "tsc -p tsconfig.json"
   },
